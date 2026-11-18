@@ -1,0 +1,130 @@
+{
+  "entities": {
+    "CloudProject": {
+      "title": "CloudProject",
+      "description": "A user-owned GateX Labs circuit project synchronized to Firestore using native maps and lists.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the project owner."
+        },
+        "name": {
+          "type": "string",
+          "description": "Human-readable project name (1..120 chars)."
+        },
+        "description": {
+          "type": "string",
+          "description": "Short project description (0..500 chars)."
+        },
+        "activePageId": {
+          "type": "string",
+          "description": "Identifier of the active schematic sheet (1..64 chars)."
+        },
+        "pages": {
+          "type": "array",
+          "description": "Bounded list (max 20) of native schematic page maps containing components, wires, and junctions."
+        },
+        "componentCount": {
+          "type": "integer",
+          "description": "Total number of components across all sheets (0..2000)."
+        },
+        "wireCount": {
+          "type": "integer",
+          "description": "Total number of wire segments across all sheets (0..4000)."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server-assigned creation timestamp via FieldValue.serverTimestamp()."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server-assigned update timestamp via FieldValue.serverTimestamp()."
+        }
+      },
+      "required": [
+        "userId",
+        "name",
+        "description",
+        "activePageId",
+        "pages",
+        "componentCount",
+        "wireCount",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "CloudCustomIc": {
+      "title": "CloudCustomIc",
+      "description": "A user-packaged reusable Custom IC / subcircuit block synchronized to Firestore.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the Custom IC owner."
+        },
+        "name": {
+          "type": "string",
+          "description": "Custom IC display name (1..80 chars)."
+        },
+        "shortCode": {
+          "type": "string",
+          "description": "Short chip silkscreen label (1..16 chars)."
+        },
+        "description": {
+          "type": "string",
+          "description": "Optional summary of chip logic (0..300 chars)."
+        },
+        "inputLabels": {
+          "type": "array",
+          "description": "Bounded list (1..4) of input pin names."
+        },
+        "outputLabels": {
+          "type": "array",
+          "description": "Bounded list (1..4) of output pin names."
+        },
+        "truthEntries": {
+          "type": "array",
+          "description": "Bounded list (1..16) of truth table mappings formatted as inputMask:outputMask."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server-assigned creation timestamp via FieldValue.serverTimestamp()."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server-assigned update timestamp via FieldValue.serverTimestamp()."
+        }
+      },
+      "required": [
+        "userId",
+        "name",
+        "shortCode",
+        "description",
+        "inputLabels",
+        "outputLabels",
+        "truthEntries",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/projects/{projectId}": {
+      "schema": {
+        "$ref": "#/entities/CloudProject"
+      },
+      "description": "User-scoped cloud-synced GateX Labs circuit projects."
+    },
+    "/users/{userId}/custom_ics/{icId}": {
+      "schema": {
+        "$ref": "#/entities/CloudCustomIc"
+      },
+      "description": "User-scoped reusable Custom IC subcircuits."
+    }
+  }
+}

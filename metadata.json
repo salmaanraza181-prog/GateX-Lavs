@@ -1,0 +1,6 @@
+{
+  "name": "GateX Labs",
+  "description": "Electronic workbench and circuit simulation laboratory for designing, analyzing, and testing digital and analog circuits on Android.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

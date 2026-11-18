@@ -1,0 +1,105 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Pillar 1: Global Default-Deny Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Hardened Global Helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidCloudProject(data, userId) {
+      return data.userId is string &&
+             data.userId == userId &&
+             data.userId == request.auth.uid &&
+             data.name is string && data.name.size() >= 1 && data.name.size() <= 120 &&
+             data.description is string && data.description.size() <= 500 &&
+             data.activePageId is string && data.activePageId.size() >= 1 && data.activePageId.size() <= 64 &&
+             data.pages is list && data.pages.size() >= 1 && data.pages.size() <= 20 &&
+             data.pages[0] is map &&
+             data.componentCount is int && data.componentCount >= 0 && data.componentCount <= 2000 &&
+             data.wireCount is int && data.wireCount >= 0 && data.wireCount <= 4000 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidCloudCustomIc(data, userId) {
+      return data.userId is string &&
+             data.userId == userId &&
+             data.userId == request.auth.uid &&
+             data.name is string && data.name.size() >= 1 && data.name.size() <= 80 &&
+             data.shortCode is string && data.shortCode.size() >= 1 && data.shortCode.size() <= 16 &&
+             data.description is string && data.description.size() <= 300 &&
+             data.inputLabels is list && data.inputLabels.size() >= 1 && data.inputLabels.size() <= 4 &&
+             data.inputLabels[0] is string &&
+             data.outputLabels is list && data.outputLabels.size() >= 1 && data.outputLabels.size() <= 4 &&
+             data.outputLabels[0] is string &&
+             data.truthEntries is list && data.truthEntries.size() >= 1 && data.truthEntries.size() <= 16 &&
+             data.truthEntries[0] is string &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    // User-scoped Cloud Projects
+    match /users/{userId}/projects/{projectId} {
+      allow get: if isOwner(userId) && isValidId(projectId);
+      allow list: if isOwner(userId);
+
+      allow create: if isOwner(userId) &&
+                       isValidId(projectId) &&
+                       incoming().keys().hasAll(['userId', 'name', 'description', 'activePageId', 'pages', 'componentCount', 'wireCount', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['userId', 'name', 'description', 'activePageId', 'pages', 'componentCount', 'wireCount', 'createdAt', 'updatedAt']) &&
+                       isValidCloudProject(incoming(), userId);
+
+      allow update: if isOwner(userId) &&
+                       isValidId(projectId) &&
+                       isValidCloudProject(incoming(), userId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['name', 'description', 'activePageId', 'pages', 'componentCount', 'wireCount', 'updatedAt']);
+
+      allow delete: if isOwner(userId) && isValidId(projectId);
+    }
+
+    // User-scoped Reusable Custom ICs
+    match /users/{userId}/custom_ics/{icId} {
+      allow get: if isOwner(userId) && isValidId(icId);
+      allow list: if isOwner(userId);
+
+      allow create: if isOwner(userId) &&
+                       isValidId(icId) &&
+                       incoming().keys().hasAll(['userId', 'name', 'shortCode', 'description', 'inputLabels', 'outputLabels', 'truthEntries', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['userId', 'name', 'shortCode', 'description', 'inputLabels', 'outputLabels', 'truthEntries', 'createdAt', 'updatedAt']) &&
+                       isValidCloudCustomIc(incoming(), userId);
+
+      allow update: if isOwner(userId) &&
+                       isValidId(icId) &&
+                       isValidCloudCustomIc(incoming(), userId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['name', 'shortCode', 'description', 'inputLabels', 'outputLabels', 'truthEntries', 'updatedAt']);
+
+      allow delete: if isOwner(userId) && isValidId(icId);
+    }
+  }
+}
